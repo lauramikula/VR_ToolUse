@@ -1,0 +1,15 @@
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+
+.DS_Store
+
+# R Environment Variables
+.REnviron
+.Renv
+.env
+
+#skip these folders
+docs/
+analyses/local
