@@ -53,6 +53,9 @@ extract_oneFile <- function (path_data) {
   #add experiment phase
   df <- addExpePhase(df)
   
+  #add sign perturbation tool used
+  df <- addSignPerturbTool(df)
+  
   return(df)
   
 }
@@ -128,6 +131,38 @@ addExpePhase <- function (df) {
 }
 
 
+#add sign of the perturbation associated with each tool
+addSignPerturbTool <- function (df) {
+  
+  df <- df %>% 
+    mutate(
+      sign_pert_tool = case_when(
+        
+        #for pilot 1 and pilot 2: impact -> -30° and slingshot -> 30°
+        grepl('pilot', experiment) ~
+          case_when(
+            per_block_list_triggerType == 'impact' ~ '-1',
+            per_block_list_triggerType == 'slingshot' ~ '+1',
+            TRUE ~ 'NA'
+          ),
+        
+        #for v1 tbd ----
+        grepl('V1', experiment) ~
+          case_when(
+            per_block_list_triggerType == 'impact' ~ 'TBD1',
+            per_block_list_triggerType == 'slingshot' ~ 'TBD2',
+            TRUE ~ 'NA'
+          ),
+        
+        #else condition
+        TRUE ~ 'NA'
+        
+      )
+    )
+  
+}
+
+
 ##combine single data files ----
 
 combine_singleFiles <- function (path_expeV) {
@@ -182,4 +217,14 @@ create_dataFiles <- function (version_xp) {
   }
   
 }
+
+
+
+#create data files ----
+
+#list all the versions of the experiment
+expeV <- list.dirs('./data', full.names = FALSE, recursive = FALSE)
+
+#create a single data file for each version of the experiment
+create_dataFiles(expeV)
 

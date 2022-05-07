@@ -13,12 +13,12 @@ getSurvey <- function (version_expe) {
   
   #set the path from version_expe
   FileName <- sprintf('./data/data_Qualtrics_%s.csv', version_expe)
-  
   survey <- read_csv(FileName, 
                      col_types = cols())
   
   #import headers labels
-  labs <- read_csv('./data/data_Qualtrics_labels_V1.csv', 
+  FileLblName <- sprintf('./data/data_Qualtrics_labels_%s.csv', version_expe)
+  labs <- read_csv(FileLblName, 
                    col_types = cols(.default = 'c'))
   
   #set labels for the survey data frame
@@ -40,6 +40,8 @@ getDataFile <- function (version_expe) {
   
   #process raw data
   data <- data %>% 
+    #remove rows in which trial_type is 'instruction'
+    filter(trial_type != 'instruction') %>% 
     #make expe_phase as levels
     mutate(expe_phase = factor(expe_phase, levels = c('practice',
                                                       'baseline',
@@ -52,9 +54,15 @@ getDataFile <- function (version_expe) {
     mutate(error_size = ifelse(error_size > 0.5, NA, error_size),
            launch_angle = ifelse(is.na(error_size), NA, launch_angle),
            launch_angle_err = ifelse(is.na(error_size), NA, launch_angle_err)) %>% 
-    #make all launch error angles the same sign
-    mutate(launch_angle_err = ifelse(launch_angle_err < 0, 
-                                     launch_angle_err*-1, launch_angle_err))
+    #calculate launch angle error direction 
+    #(> 0 is the same direction as the perturbation and < 0 is opposite to the perturbation)
+    mutate(launch_angle_err_dir = ifelse(sign_pert_tool < 0, launch_angle_err*-1, 
+                                         launch_angle_err))
+  
+  #create trial number per tool used
+  data <- data %>% 
+    group_by(ppid, tool_used) %>% 
+    mutate(trialN_tool = row_number(), .after = tool_used)
   
   return(data)
   
