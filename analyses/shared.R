@@ -1,5 +1,6 @@
 library(tidyverse)
 library(magrittr)
+library(sjlabelled) #for labelled variables
 library(ggpubr) #for plots
 library(rstatix)
 library(emmeans)
@@ -48,16 +49,16 @@ getDataFile <- function (version_expe) {
                                                       'exposure',
                                                       'washout',
                                                       'reexposure'))) %>% 
-    #calculate the difference between launch angle and target angle (< 0 is left; > 0 is right)
+    #calculate launch_angle_err:
+    #difference between launch angle and target angle (< 0 is left; > 0 is right)
     mutate(launch_angle_err = target_angle - launch_angle) %>% 
     #replace errors > 0.5 with NA
     mutate(error_size = ifelse(error_size > 0.5, NA, error_size),
            launch_angle = ifelse(is.na(error_size), NA, launch_angle),
            launch_angle_err = ifelse(is.na(error_size), NA, launch_angle_err)) %>% 
-    #calculate launch angle error direction 
+    #calculate launch angle error direction:
     #(> 0 is the same direction as the perturbation and < 0 is opposite to the perturbation)
-    mutate(launch_angle_err_dir = ifelse(sign_pert_tool < 0, launch_angle_err*-1, 
-                                         launch_angle_err))
+    mutate(launch_angle_err_dir = sign_pert_tool * launch_angle_err)
   
   #create trial number per tool used
   data <- data %>% 

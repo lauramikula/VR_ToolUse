@@ -50,6 +50,16 @@ extract_oneFile <- function (path_data) {
            target_angle = per_block_targetListToUse,
            tool_used = per_block_list_tool_type)
   
+  #fix mistake when giving ID to participants in experiment V1
+  #participant 019 with first_pert_cond = 'i30' is actually participant 017
+  #participant 019 with first_pert_cond = 's-30' is actually participant 020
+  df <- df %>% 
+    mutate(ppid = ifelse(experiment == 'V1' & ppid == 19 & grepl('i30', first_pert_cond), 
+           17, ppid))
+  df <- df %>% 
+    mutate(ppid = ifelse(experiment == 'V1' & ppid == 19 & grepl('s-30', first_pert_cond), 
+           20, ppid))
+
   #add experiment phase
   df <- addExpePhase(df)
   
@@ -131,14 +141,17 @@ addExpePhase <- function (df) {
 }
 
 
-#add sign of the perturbation associated with each tool
+#add sign of the perturbation associated with each tool (sign_pert_tool)
+#-1 is left relative to target and +1 is right relative to target
 addSignPerturbTool <- function (df) {
   
   df <- df %>% 
     mutate(
       sign_pert_tool = case_when(
         
-        #for pilot 1 and pilot 2: impact -> -30° and slingshot -> 30°
+        #for pilot 1 and pilot 2:
+        #impact goes 30° to the left of the target; 
+        #slingshot goes 30° to the right of the target
         grepl('pilot', experiment) ~
           case_when(
             per_block_list_triggerType == 'impact' ~ '-1',
@@ -146,11 +159,15 @@ addSignPerturbTool <- function (df) {
             TRUE ~ 'NA'
           ),
         
-        #for v1 tbd ----
+        #for v1:
+        #i30 and s-30: impact goes to the left and slingshot goes to the right of the target; 
+        #i-30 and s30: impact goes to the right and slingshot goes to the left of the target
         grepl('V1', experiment) ~
           case_when(
-            per_block_list_triggerType == 'impact' ~ 'TBD1',
-            per_block_list_triggerType == 'slingshot' ~ 'TBD2',
+            grepl('i30|s-30', first_pert_cond) & per_block_list_triggerType == 'impact' ~ '-1',
+            grepl('i30|s-30', first_pert_cond) & per_block_list_triggerType == 'slingshot' ~ '+1',
+            grepl('i-30|s30', first_pert_cond) & per_block_list_triggerType == 'impact' ~ '+1',
+            grepl('i-30|s30', first_pert_cond) & per_block_list_triggerType == 'slingshot' ~ '-1',
             TRUE ~ 'NA'
           ),
         
