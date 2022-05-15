@@ -43,15 +43,36 @@ plotLauchErrIndiv(data, expeV)
 
 #start to make figures ----
 
+##adaptation across all trials ----
 plotAdapt_all(data)
 
+##adaption separated by the tool being used ----
 plotAdapt_tool(data)
 
+##adaptation separated between tool used and direction of the perturbation ----
 plotAdapt_rotation(data)
 
 
 
 #look at individual angular errors on specific trials ----
 
-plotAngErr(data)
+##create new data frames ----
+
+#first and last trials
+data_FirstLastTr <- addFirtLastTrials_perTool(data)
+
+#first and last block (average across 8 trials)
+data_FirstLastBl <- addFirtLastBlocks_perTool(data)
+
+
+##launch angle error on first and last trials of each experimental phase ----
+plotAngErr_FirstLast_Trial(data_FirstLastTr, WxL = c(10,7))
+
+
+##launch angle error on first and last blocks of each experimental phase ----
+plotAngErr_FirstLast_Block(data_FirstLastBl, WxL = c(10,7))
+
+
+##improvement between first and last trials of each experimental phase ----
+plotImprove_First_Last(data_FirstLast)
 

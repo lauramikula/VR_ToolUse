@@ -28,6 +28,8 @@ plotLauchErrIndiv <- function (df, expeV) {
     #set title plot
     plot_ttl <- sprintf('%s - Participant %s', expeV, pp[i])
     
+    
+    #make plot
     plot(dataN$trial_num, dataN$launch_angle_err,
          type = 'l', col = 'gray50',
          xlab = 'Trials', ylab = 'Left <--- Angular error re: target (°) ---> Right',
@@ -74,6 +76,8 @@ plotAdapt_all <- function (df) {
                 sd_err = sd(launch_angle_err_dir, na.rm = TRUE),
                 .groups = 'drop')
     
+    
+    #make plot
     plot[[i]] <- ggplot(data = df_i, 
                         aes(x = trial_num, y = mn_err,
                             color = expe_phase, fill = expe_phase)) + 
@@ -120,6 +124,8 @@ plotAdapt_tool <- function (df) {
                 sd_err = sd(launch_angle_err_dir, na.rm = TRUE),
                 .groups = 'drop')
     
+    
+    #make plot
     plot[[i]] <- ggplot(data = df_i, 
                         aes(x = trialN_tool, y = mn_err, 
                             color = interaction(tool_used, expe_phase), 
@@ -170,6 +176,8 @@ plotAdapt_rotation <- function (df) {
                 sd_err = sd(launch_angle_err, na.rm = TRUE),
                 .groups = 'drop')
     
+    
+    #make plot
     plot[[i]] <- ggplot(data = df_i, 
                         aes(x = trialN_tool, y = mn_err, 
                             color = interaction(tool_used, sign_pert_tool, expe_phase), 
@@ -201,56 +209,31 @@ plotAdapt_rotation <- function (df) {
 
 #plots individual and averaged data ----
 
-plotAngErr <- function (df) {
+plotAngErr_FirstLast_Trial <- function (df, WxL = c(10,7)) {
   
   #custom colors
-  myCols <- c('#0065A9', '#F68B69')
+  myCols <- c('#a55975', '#df7e18') 
   
-  #get the 1st and last trial number per tool for each experimental phase
-  trials_to_keep <- df %>% 
-    filter(expe_phase != 'practice') %>% #remove practice trials
-    group_by(expe_phase) %>% 
-    filter(row_number() == 1 | row_number() == n()) %>% 
-    arrange(trialN_tool) %>% 
-    pull(trialN_tool)
-  
-  #extract the first trials of each experimental phase
-  #(every other element of trials_to_keep, starting from the 1st element)
-  firstTr <- trials_to_keep[c(TRUE, FALSE)]
-  #extract the last trials of each experimental phase
-  #(every other element of trials_to_keep, starting from the 2nd element)
-  lastTr <- trials_to_keep[c(FALSE, TRUE)]
-  
-  df <- df %>% 
-    filter(trialN_tool %in% trials_to_keep) %>% 
-    #create trialN
-    mutate(trialN = case_when(trialN_tool %in% firstTr ~ 'First',
-                              trialN_tool %in% lastTr ~ 'Last',
-                              TRUE ~ 'NA')) %>%
-    #rearrange otherwise geom_line and geom_point for individual 
-    #data points don't have the same jitter and aren't aligned
-    arrange(expe_phase, trialN, ppid, tool_used) 
-  
+  #get experiment version
+  expeV <- unique(df$experiment)
   
   #make plot
   plt <- ggplot(data = df, 
-                aes(x = trialN_tool, y = launch_angle_err_dir, 
+                aes(x = tool_used, y = launch_angle_err_dir, 
                     color = tool_used, fill = tool_used)) + 
     geom_hline(yintercept = 0, linetype = 'solid', color = 'grey40') + 
     geom_hline(yintercept = c(-15, 15), linetype = 'dotted', color = 'grey40') + 
     geom_hline(yintercept = c(-30, 30), linetype = 'dashed', color = 'grey40') + 
-    # facet_grid(. ~ trialN_tool) + 
     facet_grid(. ~ expe_phase + trialN) + 
     #lines between individual data points
-    geom_line(aes(x = tool_used, group = ppid),
+    geom_line(aes(group = ppid),
               color = 'grey50', alpha = 0.4,
-              position = position_jitter(width = 0.1, seed = 1)) + 
+              position = position_jitter(width = 0.1, seed = 1)) + #set seed to make jitter reproducible
     #boxplots for each tool used
-    geom_boxplot(aes(x = tool_used),
-                 outlier.shape = NA, color = 'black', alpha = 0.4) + 
+    geom_boxplot(outlier.shape = NA, color = 'black', alpha = 0.4) + 
     #individual data points
-    geom_point(aes(x = tool_used), size = 2,
-               position = position_jitter(width = 0.1, seed = 1)) + 
+    geom_point(size = 2, alpha = 0.8,
+               position = position_jitter(width = 0.1, seed = 1)) + #set seed to make jitter reproducible
     
     theme_classic_article() +
     #remove x axis elements
@@ -260,7 +243,102 @@ plotAngErr <- function (df) {
     scale_color_manual(name = 'Tool', values = myCols) +
     scale_fill_manual(name = 'Tool', values = myCols) +
     scale_y_continuous(breaks = seq(-30, 30, 15), expand = c(0.02, 0)) + 
-    labs(x = 'Trials per tool', y = 'Opposite to perturbation <-- Angular error (°) --> Same as perturbation') 
+    labs(title = 'Errors on single trials', x = '', 
+         y = 'Opposite to perturbation <-- Angular error (°) --> Same as perturbation') 
+  
+  
+  #save plot
+  fname = sprintf('./docs/figures/AngError_perTrial_%s.png', expeV)
+  ggsave(file=fname, plot=plt, width=WxL[1], height=WxL[2])
+  
+}
+
+
+
+plotAngErr_FirstLast_Block <- function (df, WxL = c(10,7)) {
+  
+  #custom colors
+  myCols <- c('#a55975', '#df7e18')
+  
+  #get experiment version
+  expeV <- unique(df$experiment)
+  
+  #make plot
+  plt <- ggplot(data = df, 
+                aes(x = tool_used, y = mn_launch_angle_err_dir, 
+                    color = tool_used, fill = tool_used)) + 
+    geom_hline(yintercept = 0, linetype = 'solid', color = 'grey40') + 
+    geom_hline(yintercept = c(-15, 15), linetype = 'dotted', color = 'grey40') + 
+    geom_hline(yintercept = c(-30, 30), linetype = 'dashed', color = 'grey40') + 
+    facet_grid(. ~ expe_phase + blockN) + 
+    #lines between individual data points
+    geom_line(aes(group = ppid),
+              color = 'grey50', alpha = 0.4,
+              position = position_jitter(width = 0.1, seed = 1)) + #set seed to make jitter reproducible
+    #boxplots for each tool used
+    geom_boxplot(outlier.shape = NA, color = 'black', alpha = 0.4) + 
+    #individual data points
+    geom_point(size = 2, alpha = 0.8,
+               position = position_jitter(width = 0.1, seed = 1)) + #set seed to make jitter reproducible
+    
+    theme_classic_article() +
+    #remove x axis elements
+    theme(axis.ticks.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.line.x = element_blank()) + 
+    scale_color_manual(name = 'Tool', values = myCols) +
+    scale_fill_manual(name = 'Tool', values = myCols) +
+    scale_y_continuous(breaks = seq(-30, 30, 15), expand = c(0.02, 0)) + 
+    labs(title = 'Errors averaged across 1 block', x = '', 
+         y = 'Opposite to perturbation <-- Angular error (°) --> Same as perturbation') 
+  
+  
+  #save plot
+  fname = sprintf('./docs/figures/AngError_perBlock_%s.png', expeV)
+  ggsave(file=fname, plot=plt, width=WxL[1], height=WxL[2])
+
+}
+
+
+
+plotImprove_First_Last <- function (df) {
+  
+  #custom colors
+  myCols <- c('#a55975', '#df7e18')
+  
+  #calculate improvement between last and first trials
+  #(> 0 is more errors during last trial, < 0 is less errors during last trial)
+  df_wide <- df %>% 
+    dplyr::select(experiment, first_pert_cond, ppid, expe_phase, 
+                  tool_used, launch_angle_err_dir, trialN) %>% 
+    #transform into wide format
+    spread(trialN, launch_angle_err_dir) %>% 
+    arrange(ppid, expe_phase) %>% 
+    mutate(percent_improv = (`Last trial` - `First trial`) / `First trial` * 100) %>% 
+    filter(percent_improv > -1000 & percent_improv < 1000)
+  
+  
+  #make plot
+  plt <- ggplot(data = df_wide, 
+                aes(x = expe_phase, y = percent_improv, 
+                    color = tool_used, fill = tool_used)) + 
+    geom_hline(yintercept = 0, linetype = 'solid', color = 'grey40') + 
+    geom_hline(yintercept = c(-100, 100), linetype = 'dashed', color = 'grey40') +
+    # #lines between individual data points
+    # geom_line(aes(group = ppid),
+    #           color = 'grey50', alpha = 0.4,
+    #           position = position_jitter(width = 0.1, seed = 1)) + #set seed to make jitter reproducible
+    #boxplots for each tool used
+    geom_boxplot(outlier.shape = NA, color = 'black', alpha = 0.4) +
+    #individual data points
+    geom_point(size = 2, alpha = 0.8,
+               position = position_jitter(width = 0.1, seed = 1)) + #set seed to make jitter reproducible
+    
+    theme_classic_article() + 
+    scale_color_manual(name = 'Tool', values = myCols) +
+    scale_fill_manual(name = 'Tool', values = myCols) +
+    # scale_y_continuous(breaks = seq(-30, 30, 15), expand = c(0.02, 0)) + 
+    labs(x = '', y = 'Improvement between last and first trial') 
   
   print(plt)
   
