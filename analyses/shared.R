@@ -41,8 +41,15 @@ getDataFile <- function (version_expe) {
   #set the path from version_expe
   FileName <- sprintf('./data/data_VRToolUse_%s.csv', version_expe)
   
+  #read .csv file
   data <- read_csv(FileName, 
                    col_types = cols())
+  
+  #define maximum error size (0.5 in Shanaa's experiment)
+  max_err <- 0.6
+  
+  #number of observations before removing errors > max_err
+  N_obs_before <- nrow(data)
   
   #process raw data
   data <- data %>% 
@@ -57,10 +64,10 @@ getDataFile <- function (version_expe) {
     #calculate launch_angle_err:
     #difference between launch angle and target angle (< 0 is left; > 0 is right)
     mutate(launch_angle_err = target_angle - launch_angle) %>% 
-    #replace errors > 0.5 with NA
-    mutate(error_size = ifelse(error_size > 0.5, NA, error_size),
+    #replace errors > max_err with NA
+    mutate(error_size = ifelse(error_size > max_err, NA, error_size),
            launch_angle = ifelse(is.na(error_size), NA, launch_angle),
-           launch_angle_err = ifelse(is.na(error_size), NA, launch_angle_err)) %>% 
+           launch_angle_err = ifelse(is.na(error_size), NA, launch_angle_err)) %>%
     #calculate launch angle error direction:
     #(> 0 is the same direction as the perturbation and < 0 is opposite to the perturbation)
     mutate(launch_angle_err_dir = sign_pert_tool * launch_angle_err)
@@ -69,6 +76,20 @@ getDataFile <- function (version_expe) {
   data <- data %>% 
     group_by(ppid, tool_used) %>% 
     mutate(trialN_tool = row_number(), .after = tool_used)
+  
+  #number of observations after removing errors > max_err
+  N_obs_after <- data %>% 
+    filter(is.na(error_size)) %>% 
+    nrow()
+  
+  #calculate % of trials removed (errors > max_err)
+  obs_rm <- N_obs_after * 100 / N_obs_before
+  
+  #print message in console
+  message(
+    sprintf('Maximum error size (max_err) set to %s\nPercentage of observations removed (error_size > max_err): %.2f%%', 
+            max_err, obs_rm)
+  )
   
   return(data)
   
@@ -164,6 +185,41 @@ addFirtLastBlocks_perTool <- function (df) {
     arrange(expe_phase, blockN, ppid, tool_used)
 
   return(df2)
+  
+}
+
+
+
+#get non-learners ----
+
+getListNonLearners <- function (df) {
+  
+  nonlearners <- df %>% 
+    #keep exposure trials only
+    filter(expe_phase == 'exposure') %>% 
+    #keep the last 5 trials for each tool (df is already grouped by ppid and tool_used)
+    do(tail(., 5)) %>% 
+    ungroup(tool_used) %>% 
+    #calculate median error on 10 trials (5 last trials of each tool during exposure)
+    summarise(median_err = median(launch_angle_err_dir, na.rm = TRUE),
+              .groups = 'drop') %>% 
+    #filter those who have median errors > 15°
+    filter(median_err > 15 | median_err < -15) %>% 
+    pull(ppid)
+  
+  #get a table with ppid and first_pert_cond
+  df_nonlearners <- df %>% 
+    group_by(ppid) %>% 
+    filter(row_number() == 1) %>% 
+    select(ppid, first_pert_cond) %>% 
+    filter(ppid %in% nonlearners) %>% 
+    ungroup()
+  
+  #print the table
+  message('Participants identified as non-learners')
+  print(df_nonlearners)
+  
+  return(nonlearners)
   
 }
 

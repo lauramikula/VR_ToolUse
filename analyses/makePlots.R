@@ -50,6 +50,98 @@ plotLauchErrIndiv <- function (df, expeV) {
 
 
 
+plotLast5Exposure_perTool <- function (df, expeV) {
+  
+  #to save figures as a pdf doc
+  fname = sprintf('./docs/Last5TrialsExposure_perTool_%s.pdf', expeV)
+  pdf(fname, width = 12, height = 9)
+  par(mfrow = c(2,2)) #2*2 grid
+  
+  #list all participants
+  pp <- unique(df$ppid)
+  
+  for (i in 1:length(pp)) {
+    
+    #empty list to store plots
+    plt_ls <- list()
+    
+    #get data for a single participant
+    dataN <- df %>% 
+      filter(ppid %in% pp[i]) %>% 
+      #keep exposure trials only
+      filter(expe_phase == 'exposure') %>% 
+      #keep the last 5 trials for each tool (df is already grouped by ppid and tool_used)
+      do(tail(., 5))
+    
+    #get the name of the experiment
+    expeV <- unique(dataN$experiment)
+    
+    #set title plot
+    plot_ttl <- sprintf('%s - Participant %s\nMedian across 5 last trials', expeV, pp[i])
+    
+    
+    #make plot
+    boxplot(launch_angle_err_dir ~ as.factor(tool_used), data = dataN,
+            xlab = '', ylab = 'Opposite to pert. <-- Angular error (°) --> Same side as pert.',
+            main = plot_ttl,
+            ylim = c(-40, 40))
+    points(launch_angle_err_dir ~ as.factor(tool_used), data = dataN)
+    abline(h = seq(-15, 15, 15), lty = 5)
+    
+  }
+  
+  dev.off()
+  
+}
+
+
+
+plotLast5Exposure <- function (df, expeV) {
+  
+  #to save figures as a pdf doc
+  fname = sprintf('./docs/Last5TrialsExposure_%s.pdf', expeV)
+  pdf(fname, width = 12, height = 9)
+  par(mfrow = c(2,2)) #2*2 grid
+  
+  #list all participants
+  pp <- unique(df$ppid)
+  
+  for (i in 1:length(pp)) {
+    
+    #empty list to store plots
+    plt_ls <- list()
+    
+    #get data for a single participant
+    dataN <- df %>% 
+      filter(ppid %in% pp[i]) %>% 
+      #keep exposure trials only
+      filter(expe_phase == 'exposure') %>% 
+      #keep the last 5 trials for each tool (df is already grouped by ppid and tool_used)
+      do(tail(., 5))
+    
+    #get the name of the experiment
+    expeV <- unique(dataN$experiment)
+    
+    #set title plot
+    plot_ttl <- sprintf('%s - Participant %s\nMedian across 5 last trials for both tools', expeV, pp[i])
+    
+    
+    #make plot
+    boxplot(dataN$launch_angle_err_dir,
+            xlab = '', ylab = 'Opposite to pert. <-- Angular error (°) --> Same side as pert.',
+            main = plot_ttl,
+            ylim = c(-40, 40))
+    points(dataN$launch_angle_err_dir)
+    abline(h = seq(-15, 15, 15), lty = 5)
+    
+  }
+  
+  dev.off()
+  
+}
+
+
+
 #plots averaged data ----
 
 plotAdapt_all <- function (df) {
@@ -93,7 +185,7 @@ plotAdapt_all <- function (df) {
       scale_color_discrete(name = 'Experimental phase') +
       scale_fill_discrete(name = 'Experimental phase') +
       labs(title = sprintf('%s (N = %s) - All trials', expe_v, Npp), 
-           x = 'Trials', y = 'Opposite side of the perturbation <-- Angular error (°) --> Same side of the perturbation')
+           x = 'Trials', y = 'Side opposite to the perturbation <-- Angular error (°) --> Same side as the perturbation')
     
     print(plot[[i]])
     
@@ -143,7 +235,7 @@ plotAdapt_tool <- function (df) {
       scale_fill_discrete(name = 'Experimental phase') +
       scale_y_continuous(breaks = seq(0, 30, 15), expand = c(0, 0)) + 
       labs(title = sprintf('%s (N = %s) - Per tool', expe_v, Npp), 
-           x = 'Trials per tool', y = 'Opposite side of the perturbation <-- Angular error (°) --> Same side of the perturbation') + 
+           x = 'Trials per tool', y = 'Side opposite to the perturbation <-- Angular error (°) --> Same side as the perturbation') + 
       #make drawings unconfined to the plot panel
       coord_cartesian(clip = 'off')
     
@@ -209,13 +301,18 @@ plotAdapt_rotation <- function (df) {
 
 #plots individual and averaged data ----
 
-plotAngErr_FirstLast_Trial <- function (df, WxL = c(10,7)) {
+plotAngErr_FirstLast_Trial <- function (df, WxL = c(10,7), 
+                                        pp = 'all', extension = 'svg') {
   
   #custom colors
   myCols <- c('#a55975', '#df7e18') 
   
   #get experiment version
   expeV <- unique(df$experiment)
+  
+  #set plot title
+  if (pp == 'learners') {ttl = 'Errors on single trials (learners only)'}
+  else {ttl = 'Errors on single trials (all participants)'}
   
   #make plot
   plt <- ggplot(data = df, 
@@ -243,25 +340,32 @@ plotAngErr_FirstLast_Trial <- function (df, WxL = c(10,7)) {
     scale_color_manual(name = 'Tool', values = myCols) +
     scale_fill_manual(name = 'Tool', values = myCols) +
     scale_y_continuous(breaks = seq(-30, 30, 15), expand = c(0.02, 0)) + 
-    labs(title = 'Errors on single trials', x = '', 
+    labs(title = ttl, x = '', 
          y = 'Opposite to perturbation <-- Angular error (°) --> Same as perturbation') 
   
   
   #save plot
-  fname = sprintf('./docs/figures/AngError_perTrial_%s.png', expeV)
+  if (pp == 'all') {name_fig = 'all'}
+  else {name_fig = 'learners'}
+  fname = sprintf('./docs/figures/AngError_perTrial_%s_%s.%s', expeV, name_fig, extension)
   ggsave(file=fname, plot=plt, width=WxL[1], height=WxL[2])
   
 }
 
 
 
-plotAngErr_FirstLast_Block <- function (df, WxL = c(10,7)) {
+plotAngErr_FirstLast_Block <- function (df, WxL = c(10,7), 
+                                        pp = 'all', extension = 'svg') {
   
   #custom colors
   myCols <- c('#a55975', '#df7e18')
   
   #get experiment version
   expeV <- unique(df$experiment)
+  
+  #set plot title
+  if (pp == 'learners') {ttl = 'Errors averaged across 1 block (learners only)'}
+  else {ttl = 'Errors averaged across 1 block (all participants)'}
   
   #make plot
   plt <- ggplot(data = df, 
@@ -289,12 +393,14 @@ plotAngErr_FirstLast_Block <- function (df, WxL = c(10,7)) {
     scale_color_manual(name = 'Tool', values = myCols) +
     scale_fill_manual(name = 'Tool', values = myCols) +
     scale_y_continuous(breaks = seq(-30, 30, 15), expand = c(0.02, 0)) + 
-    labs(title = 'Errors averaged across 1 block', x = '', 
+    labs(title = ttl, x = '', 
          y = 'Opposite to perturbation <-- Angular error (°) --> Same as perturbation') 
   
   
   #save plot
-  fname = sprintf('./docs/figures/AngError_perBlock_%s.png', expeV)
+  if (pp == 'all') {name_fig = 'all'}
+  else {name_fig = 'learners'}
+  fname = sprintf('./docs/figures/AngError_perBlock_%s_%s.%s', expeV, name_fig, extension)
   ggsave(file=fname, plot=plt, width=WxL[1], height=WxL[2])
 
 }
