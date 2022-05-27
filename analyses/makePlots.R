@@ -160,24 +160,33 @@ plotAdapt_all <- function (df) {
     #calculate mean launch error angle across all participants
     df_i <- df %>% 
       filter(experiment == expe_v) %>% 
-      group_by(trial_num, expe_phase) %>% 
+      group_by(trial_num, block_num, expe_phase) %>% 
       # summarise(mn_err = mean(launch_angle_err, na.rm = TRUE),
       #           sd_err = sd(launch_angle_err, na.rm = TRUE),
       #           .groups = 'drop')
       summarise(mn_err = mean(launch_angle_err_dir, na.rm = TRUE), #error direction instead of just error
                 sd_err = sd(launch_angle_err_dir, na.rm = TRUE),
-                .groups = 'drop')
+                n = n(),
+                .groups = 'drop') %>% 
+      #95% confidence intervals
+      mutate(lower_ci = mn_err - qt(1 - (0.05/2), n - 1) * (sd_err / sqrt(n)),
+             upper_ci = mn_err + qt(1 - (0.05/2), n - 1) * (sd_err / sqrt(n)))
     
     
     #make plot
     plot[[i]] <- ggplot(data = df_i, 
                         aes(x = trial_num, y = mn_err,
-                            color = expe_phase, fill = expe_phase)) + 
+                            color = expe_phase, fill = expe_phase,
+                            group = interaction(expe_phase, block_num))) + 
       geom_hline(yintercept = 0, linetype = 'solid', color = 'grey40') +
       geom_hline(yintercept = c(-15, 15), linetype = 'dotted', color = 'grey40') +
       geom_hline(yintercept = 30, linetype = 'dashed', color = 'grey40') +
-      geom_ribbon(aes(ymin = mn_err - sd_err, max = mn_err + sd_err),
-                  linetype = 0, alpha = 0.4) +
+      # #sd
+      # geom_ribbon(aes(ymin = mn_err - sd_err, max = mn_err + sd_err),
+      #             linetype = 0, alpha = 0.5) +
+      #95% CI
+      geom_ribbon(aes(ymin = lower_ci, max = upper_ci),
+                  linetype = 0, alpha = 0.5) +
       geom_line() +
       geom_point() + 
       
@@ -197,6 +206,9 @@ plotAdapt_all <- function (df) {
 
 plotAdapt_tool <- function (df) {
   
+  #custom colors
+  myCols <- c('#dd571c', '#1338be') 
+  
   plot <- list()
   
   for (i in 1:length(unique(df$experiment))) {
@@ -214,25 +226,37 @@ plotAdapt_tool <- function (df) {
       group_by(trialN_tool, expe_phase, tool_used) %>% 
       summarise(mn_err = mean(launch_angle_err_dir, na.rm = TRUE),
                 sd_err = sd(launch_angle_err_dir, na.rm = TRUE),
-                .groups = 'drop')
+                n = n(),
+                .groups = 'drop') %>% 
+      #95% confidence intervals
+      mutate(lower_ci = mn_err - qt(1 - (0.05/2), n - 1) * (sd_err / sqrt(n)),
+             upper_ci = mn_err + qt(1 - (0.05/2), n - 1) * (sd_err / sqrt(n)))
     
     
     #make plot
     plot[[i]] <- ggplot(data = df_i, 
                         aes(x = trialN_tool, y = mn_err, 
-                            color = interaction(tool_used, expe_phase), 
-                            fill = interaction(tool_used, expe_phase))) + 
+                            # color = interaction(tool_used, expe_phase), 
+                            # fill = interaction(tool_used, expe_phase)
+                            color = tool_used, 
+                            fill = tool_used,
+                            group = interaction(tool_used, expe_phase)
+                            )) + 
       geom_hline(yintercept = 0, linetype = 'solid', color = 'grey40') +
       geom_hline(yintercept = c(-15, 15), linetype = 'dotted', color = 'grey40') +
       geom_hline(yintercept = 30, linetype = 'dashed', color = 'grey40') +
-      geom_ribbon(aes(ymin = mn_err - sd_err, max = mn_err + sd_err),
-                  linetype = 0, alpha = 0.3) +
+      # #sd
+      # geom_ribbon(aes(ymin = mn_err - sd_err, max = mn_err + sd_err),
+      #             linetype = 0, alpha = 0.4) +
+      #95% CI
+      geom_ribbon(aes(ymin = lower_ci, max = upper_ci),
+                  linetype = 0, alpha = 0.5) +
       geom_line(size = 0.8) + 
       geom_point() + 
       
-      theme_classic_article() +
-      scale_color_discrete(name = 'Experimental phase') +
-      scale_fill_discrete(name = 'Experimental phase') +
+      theme_classic_article() + 
+      scale_color_manual(name = 'Tool', values = myCols) + 
+      scale_fill_manual(name = 'Tool', values = myCols) + 
       scale_y_continuous(breaks = seq(0, 30, 15), expand = c(0, 0)) + 
       labs(title = sprintf('%s (N = %s) - Per tool', expe_v, Npp), 
            x = 'Trials per tool', y = 'Side opposite to the perturbation <-- Angular error (°) --> Same side as the perturbation') + 
@@ -248,6 +272,9 @@ plotAdapt_tool <- function (df) {
 
 
 plotAdapt_rotation <- function (df) {
+  
+  #custom colors
+  myCols <- c('#dd571c', '#1338be') 
   
   plot <- list()
   
@@ -266,28 +293,40 @@ plotAdapt_rotation <- function (df) {
       group_by(trialN_tool, expe_phase, tool_used, sign_pert_tool) %>% 
       summarise(mn_err = mean(launch_angle_err, na.rm = TRUE),
                 sd_err = sd(launch_angle_err, na.rm = TRUE),
-                .groups = 'drop')
+                n = n(),
+                .groups = 'drop') %>% 
+      #95% confidence intervals
+      mutate(lower_ci = mn_err - qt(1 - (0.05/2), n - 1) * (sd_err / sqrt(n)),
+             upper_ci = mn_err + qt(1 - (0.05/2), n - 1) * (sd_err / sqrt(n)))
     
     
     #make plot
     plot[[i]] <- ggplot(data = df_i, 
                         aes(x = trialN_tool, y = mn_err, 
-                            color = interaction(tool_used, sign_pert_tool, expe_phase), 
-                            fill = interaction(tool_used, sign_pert_tool, expe_phase))) + 
+                            # color = interaction(tool_used, sign_pert_tool, expe_phase), 
+                            # fill = interaction(tool_used, sign_pert_tool, expe_phase)
+                            color = tool_used, 
+                            fill = tool_used,
+                            group = interaction(tool_used, sign_pert_tool, expe_phase)
+                            )) + 
       geom_hline(yintercept = 0, linetype = 'solid', color = 'grey40') +
       geom_hline(yintercept = c(-15, 15), linetype = 'dotted', color = 'grey40') +
       geom_hline(yintercept = c(-30, 30), linetype = 'dashed', color = 'grey40') +
-      geom_ribbon(aes(ymin = mn_err - sd_err, max = mn_err + sd_err),
-                  linetype = 0, alpha = 0.3) +
+      # #sd
+      # geom_ribbon(aes(ymin = mn_err - sd_err, max = mn_err + sd_err),
+      #             linetype = 0, alpha = 0.4) +
+      #95% CI
+      geom_ribbon(aes(ymin = lower_ci, max = upper_ci),
+                  linetype = 0, alpha = 0.5) +
       geom_line(size = 0.8) + 
       geom_point() + 
       
-      theme_classic_article() +
-      scale_color_discrete(name = 'Experimental phase') +
-      scale_fill_discrete(name = 'Experimental phase') +
+      theme_classic_article() + 
+      scale_color_manual(name = 'Tool', values = myCols) + 
+      scale_fill_manual(name = 'Tool', values = myCols) + 
       scale_y_continuous(breaks = seq(-30, 30, 15), expand = c(0, 0)) + 
-      labs(title = sprintf('%s (N = %s) - Per rotation', expe_v, Npp), 
-           x = 'Trials per rotation', y = 'CCW <-- Angular error (°) --> CW') + 
+      labs(title = sprintf('%s (N = %s) - Per perturbation sign', expe_v, Npp), 
+           x = 'Trials per perturbation sign', y = 'CCW <-- Angular error (°) --> CW') + 
       #make drawings unconfined to the plot panel
       coord_cartesian(clip = 'off')
     
@@ -305,7 +344,7 @@ plotAngErr_FirstLast_Trial <- function (df, WxL = c(10,7),
                                         pp = 'all', extension = 'svg') {
   
   #custom colors
-  myCols <- c('#a55975', '#df7e18') 
+  myCols <- c('#dd571c', '#1338be') 
   
   #get experiment version
   expeV <- unique(df$experiment)
@@ -318,27 +357,33 @@ plotAngErr_FirstLast_Trial <- function (df, WxL = c(10,7),
   plt <- ggplot(data = df, 
                 aes(x = tool_used, y = launch_angle_err_dir, 
                     color = tool_used, fill = tool_used)) + 
+    #margin of error (participants still get max points)
+    geom_rect(mapping = aes(xmin = -Inf, xmax = +Inf, ymin = -3, ymax = +3), 
+              fill = 'grey85', color = NA, alpha = 0.5) + 
     geom_hline(yintercept = 0, linetype = 'solid', color = 'grey40') + 
     geom_hline(yintercept = c(-15, 15), linetype = 'dotted', color = 'grey40') + 
     geom_hline(yintercept = c(-30, 30), linetype = 'dashed', color = 'grey40') + 
     facet_grid(. ~ expe_phase + trialN) + 
-    #lines between individual data points
-    geom_line(aes(group = ppid),
-              color = 'grey50', alpha = 0.4,
-              position = position_jitter(width = 0.1, seed = 1)) + #set seed to make jitter reproducible
+    # #lines between individual data points
+    # geom_line(aes(group = ppid),
+    #           color = 'grey50', alpha = 0.4,
+    #           position = position_jitter(width = 0.1, seed = 1)) + #set seed to make jitter reproducible
     #boxplots for each tool used
-    geom_boxplot(outlier.shape = NA, color = 'black', alpha = 0.4) + 
+    geom_boxplot(outlier.shape = NA, color = 'black', alpha = 0.6) + 
     #individual data points
     geom_point(size = 2, alpha = 0.8,
                position = position_jitter(width = 0.1, seed = 1)) + #set seed to make jitter reproducible
+    #add mean to boxplots
+    stat_summary(fun = 'mean', geom = 'point', size = 4.5, shape = 18, 
+                 color = 'white', show.legend = FALSE) + 
     
     theme_classic_article() +
     #remove x axis elements
     theme(axis.ticks.x = element_blank(),
           axis.text.x = element_blank(),
           axis.line.x = element_blank()) + 
-    scale_color_manual(name = 'Tool', values = myCols) +
-    scale_fill_manual(name = 'Tool', values = myCols) +
+    scale_color_manual(name = 'Tool', values = myCols) + 
+    scale_fill_manual(name = 'Tool', values = myCols) + 
     scale_y_continuous(breaks = seq(-30, 30, 15), expand = c(0.02, 0)) + 
     labs(title = ttl, x = '', 
          y = 'Opposite to perturbation <-- Angular error (°) --> Same as perturbation') 
@@ -358,7 +403,7 @@ plotAngErr_FirstLast_Block <- function (df, WxL = c(10,7),
                                         pp = 'all', extension = 'svg') {
   
   #custom colors
-  myCols <- c('#a55975', '#df7e18')
+  myCols <- c('#dd571c', '#1338be') 
   
   #get experiment version
   expeV <- unique(df$experiment)
@@ -371,19 +416,25 @@ plotAngErr_FirstLast_Block <- function (df, WxL = c(10,7),
   plt <- ggplot(data = df, 
                 aes(x = tool_used, y = mn_launch_angle_err_dir, 
                     color = tool_used, fill = tool_used)) + 
+    #margin of error (participants still get max points)
+    geom_rect(mapping = aes(xmin = -Inf, xmax = +Inf, ymin = -3, ymax = +3), 
+              fill = 'grey85', color = NA, alpha = 0.5) + 
     geom_hline(yintercept = 0, linetype = 'solid', color = 'grey40') + 
     geom_hline(yintercept = c(-15, 15), linetype = 'dotted', color = 'grey40') + 
     geom_hline(yintercept = c(-30, 30), linetype = 'dashed', color = 'grey40') + 
     facet_grid(. ~ expe_phase + blockN) + 
-    #lines between individual data points
-    geom_line(aes(group = ppid),
-              color = 'grey50', alpha = 0.4,
-              position = position_jitter(width = 0.1, seed = 1)) + #set seed to make jitter reproducible
+    # #lines between individual data points
+    # geom_line(aes(group = ppid),
+    #           color = 'grey50', alpha = 0.4,
+    #           position = position_jitter(width = 0.1, seed = 1)) + #set seed to make jitter reproducible
     #boxplots for each tool used
-    geom_boxplot(outlier.shape = NA, color = 'black', alpha = 0.4) + 
+    geom_boxplot(outlier.shape = NA, color = 'black', alpha = 0.6) + 
     #individual data points
     geom_point(size = 2, alpha = 0.8,
                position = position_jitter(width = 0.1, seed = 1)) + #set seed to make jitter reproducible
+    #add mean to boxplots
+    stat_summary(fun = 'mean', geom = 'point', size = 4.5, shape = 18, 
+                 color = 'white', show.legend = FALSE) + 
     
     theme_classic_article() +
     #remove x axis elements
@@ -410,7 +461,7 @@ plotAngErr_FirstLast_Block <- function (df, WxL = c(10,7),
 plotImprove_First_Last <- function (df) {
   
   #custom colors
-  myCols <- c('#a55975', '#df7e18')
+  myCols <- c('#dd571c', '#1338be') 
   
   #calculate improvement between last and first trials
   #(> 0 is more errors during last trial, < 0 is less errors during last trial)
@@ -435,7 +486,7 @@ plotImprove_First_Last <- function (df) {
     #           color = 'grey50', alpha = 0.4,
     #           position = position_jitter(width = 0.1, seed = 1)) + #set seed to make jitter reproducible
     #boxplots for each tool used
-    geom_boxplot(outlier.shape = NA, color = 'black', alpha = 0.4) +
+    geom_boxplot(outlier.shape = NA, color = 'black', alpha = 0.6) +
     #individual data points
     geom_point(size = 2, alpha = 0.8,
                position = position_jitter(width = 0.1, seed = 1)) + #set seed to make jitter reproducible

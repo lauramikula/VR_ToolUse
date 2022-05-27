@@ -72,6 +72,12 @@ getDataFile <- function (version_expe) {
     #(> 0 is the same direction as the perturbation and < 0 is opposite to the perturbation)
     mutate(launch_angle_err_dir = sign_pert_tool * launch_angle_err)
   
+  #calculate score_per_trial (subtract score between two successive rows after grouping by ID)
+  data <- data %>% 
+    group_by(ppid) %>% 
+    mutate(score_per_trial = score - lag(score, default = 0), .after = score) %>% 
+    ungroup()
+  
   #create trial number per tool used
   data <- data %>% 
     group_by(ppid, tool_used) %>% 
@@ -213,11 +219,22 @@ getListNonLearners <- function (df) {
     filter(row_number() == 1) %>% 
     select(ppid, first_pert_cond) %>% 
     filter(ppid %in% nonlearners) %>% 
-    ungroup()
+    ungroup() %>% 
+    mutate(pert = case_when(
+      grepl('i30|s-30', first_pert_cond) ~ 'paddle CCW',
+      grepl('i-30|s30', first_pert_cond) ~ 'paddle CW',
+      TRUE ~ 'NA'
+    ))
+  
+  df_nonlearners2 <- df_nonlearners %>% 
+    group_by(pert) %>% 
+    summarise(n = n(),
+              .groups = 'drop')
   
   #print the table
   message('Participants identified as non-learners')
   print(df_nonlearners)
+  print(df_nonlearners2)
   
   return(nonlearners)
   

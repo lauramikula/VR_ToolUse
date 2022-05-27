@@ -40,6 +40,7 @@ N_gps
 ##launch angle errors on each trials ----
 plotLauchErrIndiv(data, expeV)
 
+
 ##identify non-learners ----
 
 #look at errors in the last 5 trials of each tool, at the end of exposure
@@ -57,7 +58,7 @@ data_learn <- data %>%
 
 
 
-#start to make figures ----
+#make figures for averaged data ----
 
 ##adaptation across all trials ----
 plotAdapt_all(data)
