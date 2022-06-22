@@ -4,6 +4,7 @@ library(sjlabelled) #for labelled variables
 library(ggpubr) #for plots
 library(rstatix)
 library(emmeans)
+library(afex)
 
 
 
@@ -83,6 +84,9 @@ getDataFile <- function (version_expe) {
     group_by(ppid, tool_used) %>% 
     mutate(trialN_tool = row_number(), .after = tool_used)
   
+  #add block number per tool used
+  data <- addBlockNtool(data)
+  
   #number of observations after removing errors > max_err
   N_obs_after <- data %>% 
     filter(is.na(error_size)) %>% 
@@ -104,6 +108,33 @@ getDataFile <- function (version_expe) {
 
 
 #calculate additional parameters ----
+
+
+addBlockNtool <- function(df) {
+  
+  #define trial number cutoffs to create block number per tool used
+  cutoffs_blockNum <- df %>% 
+    filter(ppid == 1) %>% 
+    filter(tool_used == .$tool_used[1]) %>%
+    group_by(block_num) %>%
+    filter(row_number() == 1) %>%
+    ungroup() %>% 
+    pull(trial_num)
+  
+  #define number of blocks based on the cutoffs
+  blockNum <- seq(1:(length(cutoffs_blockNum)-1))
+  
+  #create block number per tool used
+  df <- df %>% 
+    group_by(ppid, tool_used) %>% 
+    mutate(blockN_tool = cut(trial_num, breaks = cutoffs_blockNum, labels = blockNum, 
+                             include.lowest = TRUE, right = FALSE), 
+           .before = trialN_tool) %>% 
+    mutate(blockN_tool = as.factor(blockN_tool))
+  
+  return(df)
+  
+}
 
 
 addFirtLastTrials_perTool <- function (df) {
@@ -139,26 +170,6 @@ addFirtLastTrials_perTool <- function (df) {
 
 
 addFirtLastBlocks_perTool <- function (df) {
-  
-  #define trial number cutoffs to create block number per tool used
-  cutoffs_blockNum <- df %>% 
-    filter(ppid == 1) %>% 
-    filter(tool_used == .$tool_used[1]) %>%
-    group_by(block_num) %>%
-    filter(row_number() == 1) %>%
-    ungroup() %>% 
-    pull(trial_num)
-  
-  #define number of blocks based on the cutoffs
-  blockNum <- seq(1:(length(cutoffs_blockNum)-1))
-  
-  #create block number per tool used
-  df <- df %>% 
-    group_by(ppid, tool_used) %>% 
-    mutate(blockN_tool = cut(trial_num, breaks = cutoffs_blockNum, labels = blockNum, 
-                             include.lowest = TRUE, right = FALSE), 
-           .before = trialN_tool) %>% 
-    mutate(blockN_tool = as.factor(blockN_tool))
   
   #get the 1st and last block number per tool for each experimental phase
   blocks_to_keep <- df %>%

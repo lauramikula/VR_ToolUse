@@ -102,12 +102,14 @@ addExpePhase <- function (df) {
   expePhase <- list(
     c(0, 40, 120, 240, Inf),      # pilot1 (participants 1 to 5)
     c(0 ,40, 121, 242, 323, Inf), # pilot2 (participants 6 to 10)
-    c(0, 48, 129, 291, 340, Inf)  # v1
+    c(0, 48, 129, 291, 340, Inf), # v1 (participants 1 to 40)
+    c(0, 48, 129, 291, 340, Inf)  # v2 (participants 41 to --)
   )
   
   #define names of the experiment phase
   lbl_expePhase <- list(
     c('practice', 'baseline', 'exposure', 'washout'),
+    c('practice', 'baseline', 'exposure', 'washout', 'reexposure'),
     c('practice', 'baseline', 'exposure', 'washout', 'reexposure'),
     c('practice', 'baseline', 'exposure', 'washout', 'reexposure')
   )
@@ -163,6 +165,18 @@ addSignPerturbTool <- function (df) {
         #i30 and s-30: impact goes to the left and slingshot goes to the right of the target; 
         #i-30 and s30: impact goes to the right and slingshot goes to the left of the target
         grepl('V1', experiment) ~
+          case_when(
+            grepl('i30|s-30', first_pert_cond) & per_block_list_triggerType == 'impact' ~ '-1',
+            grepl('i30|s-30', first_pert_cond) & per_block_list_triggerType == 'slingshot' ~ '+1',
+            grepl('i-30|s30', first_pert_cond) & per_block_list_triggerType == 'impact' ~ '+1',
+            grepl('i-30|s30', first_pert_cond) & per_block_list_triggerType == 'slingshot' ~ '-1',
+            TRUE ~ 'NA'
+          ),
+        
+        #for v2:
+        #i30 and s-30: impact goes to the left and slingshot goes to the right of the target; 
+        #i-30 and s30: impact goes to the right and slingshot goes to the left of the target
+        grepl('V2', experiment) ~
           case_when(
             grepl('i30|s-30', first_pert_cond) & per_block_list_triggerType == 'impact' ~ '-1',
             grepl('i30|s-30', first_pert_cond) & per_block_list_triggerType == 'slingshot' ~ '+1',

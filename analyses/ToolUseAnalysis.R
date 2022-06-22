@@ -65,9 +65,16 @@ plotAdapt_all(data)
 
 ##adaption separated by the tool being used ----
 plotAdapt_tool(data)
+plotAdapt_tool_noPractice(data)
 
 ##adaptation separated between tool used and direction of the perturbation ----
 plotAdapt_rotation(data)
+
+##adaptation first and last trials on every switch ----
+plotAdapt_EverySwitch(data, WxL = c(10,7), 
+                      pp = 'all', extension = 'png')
+plotAdapt_EverySwitch(data_learn, WxL = c(10,7), 
+                      pp = 'learners', extension = 'png')
 
 
 
@@ -85,9 +92,39 @@ data_FirstLastBl <- addFirtLastBlocks_perTool(data)
 ##launch angle error on first and last trials of each experimental phase ----
 plotAngErr_FirstLast_Trial(data_FirstLastTr, WxL = c(10,7), pp = 'all', extension = 'png')
 
+#stats
+dataStats <- data_FirstLastTr %>% 
+  convert_as_factor(ppid, tool_used, expe_phase, trialN, trialN_tool)
+#normality assumption
+dataStats %>% 
+  group_by(tool_used, trialN_tool) %>% 
+  shapiro_test(launch_angle_err_dir)
+ggqqplot(dataStats, 'launch_angle_err_dir') + facet_grid(tool_used ~ trialN_tool)
+#ANOVA
+res.aov <- aov_ez(data = dataStats, dv = 'launch_angle_err_dir', id = 'ppid',
+                  within = c('tool_used', 'trialN_tool'),
+                  anova_table = list(es = 'pes'), #get partial eta-squared
+                  include_aov = TRUE) #get uncorrected degrees of freedom
+get_anova_table(res.aov)
+#qqplot
+ggqqplot(as.numeric(residuals(res.aov$lm)))
+#main effect of trialN_tool, no interaction
+postHoc <- emmeans(res.aov, ~ trialN_tool, adjust = 'bonferroni')
+postHoc$contrasts %>% 
+  as.data.frame() %>% 
+  mutate(p_val = format.pval(p.value, digits = 3)) %>% 
+  add_significance()
+#get effect sizes
+eff_size(postHoc, sigma = sigma(res.aov$aov$`participant:tasksNum`), 
+         edf = df.residual(res.aov$aov$`participant:tasksNum`))
+
 
 ##launch angle error on first and last blocks of each experimental phase ----
 plotAngErr_FirstLast_Block(data_FirstLastBl, WxL = c(10,7), pp = 'all', extension = 'png')
+
+
+##launch angle error on first and last trials of each switch ----
+plotAngErr_EverySwitch(data, WxL = c(10,7), pp = 'all', extension = 'png')
 
 
 ##improvement between first and last trials of each experimental phase ----
@@ -107,4 +144,6 @@ plotAngErr_FirstLast_Trial(data_FirstLastTr_learn, WxL = c(10,7),
                            pp = 'learners', extension = 'png')
 plotAngErr_FirstLast_Block(data_FirstLastBl_learn, WxL = c(10,7), 
                            pp = 'learners', extension = 'png')
+plotAngErr_EverySwitch(data_learn, WxL = c(10,7), 
+                       pp = 'learners', extension = 'png')
 
