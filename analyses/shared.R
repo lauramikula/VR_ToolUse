@@ -5,6 +5,8 @@ library(ggpubr) #for plots
 library(rstatix)
 library(emmeans)
 library(afex)
+library(effects) #to get plots of effects of different variables
+library(multcomp)
 
 
 
@@ -112,9 +114,12 @@ getDataFile <- function (version_expe) {
 
 addBlockNtool <- function(df) {
   
+  #extract first participant ID number
+  first_pp <- unique(df$ppid)[1]
+  
   #define trial number cutoffs to create block number per tool used
   cutoffs_blockNum <- df %>% 
-    filter(ppid == 1) %>% 
+    filter(ppid == first_pp) %>% 
     filter(tool_used == .$tool_used[1]) %>%
     group_by(block_num) %>%
     filter(row_number() == 1) %>%
