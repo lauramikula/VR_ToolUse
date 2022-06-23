@@ -196,7 +196,12 @@ plotAdapt_all <- function (df) {
       labs(title = sprintf('%s (N = %s) - All trials', expe_v, Npp), 
            x = 'Trials', y = 'Side opposite to the perturbation <-- Angular error (°) --> Same side as the perturbation')
     
-    print(plot[[i]])
+    # #print plot
+    # print(plot[[i]])
+    
+    #save plot
+    fname = sprintf('./docs/figures/plotAdapt_all_%s_.png', expe_v)
+    ggsave(file=fname, plot=plot[[i]], width=13, height=8)
     
   }
   
@@ -266,7 +271,12 @@ plotAdapt_tool <- function (df) {
       #make drawings unconfined to the plot panel
       coord_cartesian(clip = 'off')
     
-    print(plot[[i]])
+    # #print plot
+    # print(plot[[i]])
+    
+    #save plot
+    fname = sprintf('./docs/figures/plotAdapt_tool_%s_.png', expe_v)
+    ggsave(file=fname, plot=plot[[i]], width=13, height=8)
     
   }
   
@@ -411,7 +421,12 @@ plotAdapt_rotation <- function (df) {
       #make drawings unconfined to the plot panel
       coord_cartesian(clip = 'off')
     
-    print(plot[[i]])
+    # #print plot
+    # print(plot[[i]])
+    
+    #save plot
+    fname = sprintf('./docs/figures/plotAdapt_rotation_%s_.png', expe_v)
+    ggsave(file=fname, plot=plot[[i]], width=13, height=8)
     
   }
   
@@ -576,6 +591,61 @@ plotAngErr_FirstLast_Trial <- function (df, WxL = c(10,7),
   if (pp == 'all') {name_fig = 'all'}
   else {name_fig = 'learners'}
   fname = sprintf('./docs/figures/AngError_perTrial_%s_%s.%s', expeV, name_fig, extension)
+  ggsave(file=fname, plot=plt, width=WxL[1], height=WxL[2])
+  
+}
+
+plotAngErr_FirstLast_Trial_pres <- function (df, WxL = c(12,7), 
+                                        pp = 'all', extension = 'svg') {
+  
+  #custom colors
+  myCols <- c('#dd571c', '#1338be') 
+  
+  #get experiment version
+  expeV <- unique(df$experiment)
+  
+  #get the number of participants
+  npp <- length(unique(df$ppid))
+  
+  #set plot title
+  ttl = sprintf('N = %s', npp)
+  
+  #make plot
+  plt <- ggplot(data = df, 
+                aes(x = tool_used, y = launch_angle_err_dir, 
+                    color = tool_used, fill = tool_used)) + 
+    #margin of error (participants still get max points)
+    geom_rect(mapping = aes(xmin = -Inf, xmax = +Inf, ymin = -3, ymax = +3), 
+              fill = 'grey85', color = NA, alpha = 0.5) + 
+    geom_hline(yintercept = 0, linetype = 'solid', color = 'grey40') + 
+    geom_hline(yintercept = c(-15, 15), linetype = 'dotted', color = 'grey40') + 
+    geom_hline(yintercept = c(-30, 30), linetype = 'dashed', color = 'grey40') + 
+    facet_grid(. ~ expe_phase + trialN) + 
+    #boxplots for each tool used
+    geom_boxplot(outlier.shape = NA, color = 'black', alpha = 0.6) + 
+    #individual data points
+    geom_point(size = 2, alpha = 0.8,
+               position = position_jitter(width = 0.1, seed = 1)) + #set seed to make jitter reproducible
+    #add mean to boxplots
+    stat_summary(fun = 'mean', geom = 'point', size = 4.5, shape = 18, 
+                 color = 'white', show.legend = FALSE) + 
+    
+    theme_classic_article() +
+    #remove x axis elements
+    theme(axis.ticks.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.line.x = element_blank()) + 
+    scale_color_manual(name = 'Tool', values = myCols) + 
+    scale_fill_manual(name = 'Tool', values = myCols) + 
+    scale_y_continuous(breaks = seq(-30, 30, 15), expand = c(0.02, 0)) + 
+    labs(title = ttl, x = '', 
+         y = 'Angular error at launch (°)') 
+  
+  
+  #save plot
+  if (pp == 'all') {name_fig = 'all'}
+  else {name_fig = 'learners'}
+  fname = sprintf('./docs/figures/AngError_perTrial_Pres_%s_%s.%s', expeV, name_fig, extension)
   ggsave(file=fname, plot=plt, width=WxL[1], height=WxL[2])
   
 }
