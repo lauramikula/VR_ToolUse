@@ -233,7 +233,7 @@ getListNonLearners <- function (df) {
   df_nonlearners <- df %>% 
     group_by(ppid) %>% 
     filter(row_number() == 1) %>% 
-    select(ppid, first_pert_cond) %>% 
+    dplyr::select(ppid, first_pert_cond) %>% 
     filter(ppid %in% nonlearners) %>% 
     ungroup() %>% 
     mutate(pert = case_when(

@@ -284,10 +284,10 @@ plotAdapt_tool <- function (df) {
 
 
 
-plotAdapt_tool_noPractice <- function (df) {
+plotAdapt_tool_noPractice <- function (df, pp = 'all', save = TRUE, extension = 'png') {
   
   #custom colors
-  myCols <- c('#dd571c', '#1338be') 
+  myCols <- c('#dd571c', '#1338be')
   
   plot <- list()
   
@@ -322,6 +322,10 @@ plotAdapt_tool_noPractice <- function (df) {
       mutate(lower_ci = mn_err - qt(1 - (0.05/2), n - 1) * (sd_err / sqrt(n)),
              upper_ci = mn_err + qt(1 - (0.05/2), n - 1) * (sd_err / sqrt(n)))
     
+    #plot title
+    if (pp == 'all') {plot_ttl = sprintf('N = %s', Npp)}
+    else {plot_ttl = sprintf('N = %s (learners only)', Npp)}
+    
     
     #make plot
     plot[[i]] <- ggplot(data = df_i, 
@@ -346,15 +350,25 @@ plotAdapt_tool_noPractice <- function (df) {
       geom_point() + 
       
       theme_classic_article() + 
+      theme(text = element_text(size = 15)) + 
       scale_color_manual(name = 'Tool', values = myCols) + 
       scale_fill_manual(name = 'Tool', values = myCols) + 
       scale_y_continuous(breaks = seq(0, 30, 15), expand = c(0, 0)) + 
-      labs(title = sprintf('N = %s', Npp), 
+      labs(title = plot_ttl, 
            x = 'Trials per tool', y = 'Angular error at launch (°)') + 
       #make drawings unconfined to the plot panel
       coord_cartesian(clip = 'off')
     
-    print(plot[[i]])
+    
+    #print or save plot
+    if (save == TRUE) {
+      if (pp == 'all') {name_fig = 'all'}
+      else {name_fig = 'learners'}
+      fname = sprintf('./docs/figures/plotAdpat_tool_noPractice_%s_%s.%s', expeV, name_fig, extension)
+      ggsave(file=fname, plot=plot[[i]], width=12, height=7)
+    } else {
+      print(plot[[i]])
+    }
     
   }
   
@@ -608,7 +622,8 @@ plotAngErr_FirstLast_Trial_pres <- function (df, WxL = c(12,7),
   npp <- length(unique(df$ppid))
   
   #set plot title
-  ttl = sprintf('N = %s', npp)
+  if (pp == 'all') {ttl = sprintf('N = %s', npp)}
+  else {ttl = sprintf('N = %s (learners only)', npp)}
   
   #make plot
   plt <- ggplot(data = df, 
@@ -631,13 +646,14 @@ plotAngErr_FirstLast_Trial_pres <- function (df, WxL = c(12,7),
                  color = 'white', show.legend = FALSE) + 
     
     theme_classic_article() +
+    theme(text = element_text(size = 15)) + 
     #remove x axis elements
     theme(axis.ticks.x = element_blank(),
           axis.text.x = element_blank(),
           axis.line.x = element_blank()) + 
     scale_color_manual(name = 'Tool', values = myCols) + 
     scale_fill_manual(name = 'Tool', values = myCols) + 
-    scale_y_continuous(breaks = seq(-30, 30, 15), expand = c(0.02, 0)) + 
+    scale_y_continuous(limits = c(-35, 73), breaks = seq(-30, 30, 15), expand = c(0.02, 0)) +
     labs(title = ttl, x = '', 
          y = 'Angular error at launch (°)') 
   
@@ -707,6 +723,65 @@ plotAngErr_FirstLast_Block <- function (df, WxL = c(10,7),
   fname = sprintf('./docs/figures/AngError_perBlock_%s_%s.%s', expeV, name_fig, extension)
   ggsave(file=fname, plot=plt, width=WxL[1], height=WxL[2])
 
+}
+
+
+
+plotAngErr_FirstLast_Block_pres <- function (df, WxL = c(12,7), 
+                                        pp = 'all', extension = 'svg') {
+  
+  #custom colors
+  myCols <- c('#dd571c', '#1338be') 
+  
+  #get experiment version
+  expeV <- unique(df$experiment)
+  
+  #get the number of participants
+  npp <- length(unique(df$ppid))
+  
+  #set plot title
+  if (pp == 'all') {ttl = sprintf('N = %s', npp)}
+  else {ttl = sprintf('N = %s (learners only)', npp)}
+  
+  #make plot
+  plt <- ggplot(data = df, 
+                aes(x = tool_used, y = mn_launch_angle_err_dir, 
+                    color = tool_used, fill = tool_used)) + 
+    #margin of error (participants still get max points)
+    geom_rect(mapping = aes(xmin = -Inf, xmax = +Inf, ymin = -3, ymax = +3), 
+              fill = 'grey85', color = NA, alpha = 0.5) + 
+    geom_hline(yintercept = 0, linetype = 'solid', color = 'grey40') + 
+    geom_hline(yintercept = c(-15, 15), linetype = 'dotted', color = 'grey40') + 
+    geom_hline(yintercept = 30, linetype = 'dashed', color = 'grey40') + 
+    facet_grid(. ~ expe_phase + blockN) + 
+    #boxplots for each tool used
+    geom_boxplot(outlier.shape = NA, color = 'black', alpha = 0.6) + 
+    #individual data points
+    geom_point(size = 2, alpha = 0.8,
+               position = position_jitter(width = 0.1, seed = 1)) + #set seed to make jitter reproducible
+    #add mean to boxplots
+    stat_summary(fun = 'mean', geom = 'point', size = 4.5, shape = 18, 
+                 color = 'white', show.legend = FALSE) + 
+    
+    theme_classic_article() +
+    theme(text = element_text(size = 15)) + 
+    #remove x axis elements
+    theme(axis.ticks.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.line.x = element_blank()) + 
+    scale_color_manual(name = 'Tool', values = myCols) +
+    scale_fill_manual(name = 'Tool', values = myCols) + 
+    scale_y_continuous(limits = c(-16, 45), breaks = seq(-30, 30, 15), expand = c(0.02, 0)) +
+    labs(title = ttl, x = '', 
+         y = 'Angular error at launch (°)') 
+  
+  
+  #save plot
+  if (pp == 'all') {name_fig = 'all'}
+  else {name_fig = 'learners'}
+  fname = sprintf('./docs/figures/Pres_AngError_perBlock_%s_%s.%s', expeV, name_fig, extension)
+  ggsave(file=fname, plot=plt, width=WxL[1], height=WxL[2])
+  
 }
 
 
@@ -871,11 +946,20 @@ plotPertSchedule_V1 <- function () {
     ypos = rep(38, 4)
   )
   
+  #set ticks to show tool switching during baseline and exposure
+  ticks_tool <- data.frame(
+    x = c(seq(1, 80, 8), seq(241, 288, 8)),
+    y = c(rep(-1, 16)),
+    yend = c(rep(1, 16))
+  )
+  
   #make plot
   plt <- ggplot(data = df,
                  aes(x = trialNo, y = size_pert)) +
     geom_vline(xintercept = c(81, 241, 289), linetype = 'dashed', color = 'grey40') + 
     geom_step() + #use geom_step to create a staircase plot
+    geom_segment(data = ticks_tool, 
+                 aes(x = x, y = y, xend = x, yend = yend)) +  
     geom_text(data = PhLbl, aes(x = xpos, y = ypos, label = label), size = 6) + 
     
     theme_classic() + 
@@ -886,7 +970,7 @@ plotPertSchedule_V1 <- function () {
   
   
   #save plot
-  fname = sprintf('./docs/figures/perturbSchedule_V1.eps')
+  fname = sprintf('./docs/figures/perturbSchedule_V1.svg')
   ggsave(file=fname, plot=plt, width=12, height=6)
   
 }

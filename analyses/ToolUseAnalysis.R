@@ -73,7 +73,8 @@ plotAdapt_all(data)
 
 ##adaption separated by the tool being used ----
 plotAdapt_tool(data)
-plotAdapt_tool_noPractice(data)
+plotAdapt_tool_noPractice(data, save = FALSE)
+plotAdapt_tool_noPractice(data_learn, pp = 'learners', save = FALSE)
 
 ##adaptation separated between tool used and direction of the perturbation ----
 plotAdapt_rotation(data)
@@ -138,10 +139,10 @@ contrast(postHoc, interaction = c('pairwise', 'eff'))
 contrast(postHoc, interaction = c('eff', 'pairwise'))
 
 #GLMM
-#first transform variables into factors!!!!!!!!
+#first transform variables into factors!!!!!!!! or use dataStats as before
 mdl <- glm(launch_angle_err_dir ~ tool_used + expe_phase * trialN + (1 | ppid),
             family = gaussian,
-            data = data_FirstLastTr)
+            data = dataStats)
 summary(mdl)
 plot(allEffects(mdl))
 emms <- emmeans(mdl, ~ trialN*expe_phase, adjust = 'bonferroni')
@@ -185,5 +186,18 @@ plotAngErr_EverySwitch(data_learn, WxL = c(10,7),
 
 #redo some plots for presentations ----
 
+#trial-by-trial adaptation
+plotAdapt_tool_noPractice(data, save = TRUE, extension = 'svg')
+
+#single trial errors
+#all
 plotAngErr_FirstLast_Trial_pres(data_FirstLastTr, extension = 'png')
+#learners
+plotAngErr_FirstLast_Trial_pres(data_FirstLastTr_learn, pp = 'learners', extension = 'png')
+
+#single block errors
+#all
+plotAngErr_FirstLast_Block_pres(data_FirstLastBl, extension = 'svg')
+#learners
+plotAngErr_FirstLast_Block_pres(data_FirstLastBl_learn, pp = 'learners', extension = 'png')
 
