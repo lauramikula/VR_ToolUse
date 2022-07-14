@@ -104,7 +104,14 @@ data_FirstLast4Tr <- addFirtLast4Trials_perTool(data)
 to_rmv <- data_FirstLast4Tr %>% 
   filter(expe_phase == 'baseline' & trialN == 'First 4 trials') #get trials to remove first (in to_rmv)
 data_FirstLast4Tr <- anti_join(data_FirstLast4Tr, to_rmv) #anti-join to remove trials in to_rmv
-rm(to_rmv)
+to_rmvV2 <- data_FirstLast4Tr %>% 
+  filter(expe_phase == 'baseline' & experiment == 'V2') #remove all baseline trials for V2 (control experiment)
+data_FirstLast4Tr <- anti_join(data_FirstLast4Tr, to_rmvV2) #anti-join to remove trials in to_rmvV2
+rm(to_rmv, to_rmvV2)
+# to_rmvV2 <- data_FirstLast4Tr %>% 
+#   filter(expe_phase == 'exposure' & trialN == 'First 4 trials', experiment == 'V2') #remove all first 4 trials of exposure for V2 (control experiment)
+# data_FirstLast4Tr <- anti_join(data_FirstLast4Tr, to_rmvV2) #anti-join to remove trials in to_rmvV2
+# rm(to_rmvV2)
 #add a column for interaction between tool and experiment version (to get ordered plots)
 data_FirstLast4Tr <- data_FirstLast4Tr %>% 
   mutate(tool_expe = factor(interaction(tool_used, experiment),
