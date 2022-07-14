@@ -350,7 +350,7 @@ plotAdapt_tool_noPractice <- function (df, pp = 'all', save = TRUE, extension = 
       geom_point() + 
       
       theme_classic_article() + 
-      theme(text = element_text(size = 15)) + 
+      theme(text = element_text(size = 22)) + 
       scale_color_manual(name = 'Tool', values = myCols) + 
       scale_fill_manual(name = 'Tool', values = myCols) + 
       scale_y_continuous(breaks = seq(0, 30, 15), expand = c(0, 0)) + 
@@ -366,6 +366,7 @@ plotAdapt_tool_noPractice <- function (df, pp = 'all', save = TRUE, extension = 
       else {name_fig = 'learners'}
       fname = sprintf('./docs/figures/plotAdpat_tool_noPractice_%s_%s.%s', expeV, name_fig, extension)
       ggsave(file=fname, plot=plot[[i]], width=12, height=7)
+      # ggsave(file=fname, plot=plot[[i]], width=19, height=7)
     } else {
       print(plot[[i]])
     }
@@ -445,10 +446,6 @@ plotAdapt_rotation <- function (df) {
   }
   
 }
-
-
-
-
 
 
 
@@ -609,6 +606,7 @@ plotAngErr_FirstLast_Trial <- function (df, WxL = c(10,7),
   
 }
 
+
 plotAngErr_FirstLast_Trial_pres <- function (df, WxL = c(12,7), 
                                         pp = 'all', extension = 'svg') {
   
@@ -726,7 +724,6 @@ plotAngErr_FirstLast_Block <- function (df, WxL = c(10,7),
 }
 
 
-
 plotAngErr_FirstLast_Block_pres <- function (df, WxL = c(12,7), 
                                         pp = 'all', extension = 'svg') {
   
@@ -764,7 +761,7 @@ plotAngErr_FirstLast_Block_pres <- function (df, WxL = c(12,7),
                  color = 'white', show.legend = FALSE) + 
     
     theme_classic_article() +
-    theme(text = element_text(size = 15)) + 
+    theme(text = element_text(size = 20)) + 
     #remove x axis elements
     theme(axis.ticks.x = element_blank(),
           axis.text.x = element_blank(),
@@ -782,6 +779,126 @@ plotAngErr_FirstLast_Block_pres <- function (df, WxL = c(12,7),
   fname = sprintf('./docs/figures/Pres_AngError_perBlock_%s_%s.%s', expeV, name_fig, extension)
   ggsave(file=fname, plot=plt, width=WxL[1], height=WxL[2])
   
+}
+
+
+
+plotAngErr_FirstLast_4Trial_pres <- function (df, WxL = c(12,7), 
+                                             pp = 'all', extension = 'svg') {
+  
+  #custom colors
+  myCols <- c('#dd571c', '#1338be') 
+  
+  #get experiment version
+  expeV <- unique(df$experiment)
+  
+  #get the number of participants
+  npp <- length(unique(df$ppid))
+  
+  #set plot title
+  if (pp == 'all') {ttl = sprintf('N = %s', npp)}
+  else {ttl = sprintf('N = %s (learners only)', npp)}
+  
+  #make plot
+  plt <- ggplot(data = df, 
+                aes(x = tool_used, y = mn_launch_angle_err_dir,
+                    color = tool_used, fill = tool_used)) +
+    #margin of error (participants still get max points)
+    geom_rect(mapping = aes(xmin = -Inf, xmax = +Inf, ymin = -3, ymax = +3), 
+              fill = 'grey85', color = NA, alpha = 0.5) + 
+    geom_hline(yintercept = 0, linetype = 'solid', color = 'grey40') + 
+    geom_hline(yintercept = c(-15, 15), linetype = 'dotted', color = 'grey40') + 
+    geom_hline(yintercept = c(30), linetype = 'dashed', color = 'grey40') + 
+    facet_grid(. ~ expe_phase + trialN) + 
+    #boxplots for each tool used
+    geom_boxplot(outlier.shape = NA, color = 'black', alpha = 0.6) + 
+    #individual data points
+    geom_point(size = 2, alpha = 0.8,
+               position = position_jitter(width = 0.1, seed = 1)) + #set seed to make jitter reproducible
+    #add mean to boxplots
+    stat_summary(fun = 'mean', geom = 'point', size = 4.5, shape = 18, 
+                 color = 'white', show.legend = FALSE) + 
+    
+    theme_classic_article() +
+    theme(text = element_text(size = 15)) + 
+    #remove x axis elements
+    theme(axis.ticks.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.line.x = element_blank()) + 
+    scale_color_manual(name = 'Tool', values = myCols) + 
+    scale_fill_manual(name = 'Tool', values = myCols) + 
+    scale_y_continuous(limits = c(-20, 45), breaks = seq(-30, 30, 15), expand = c(0.02, 0)) +
+    labs(title = ttl, x = '', 
+         y = 'Angular error at launch (°)') 
+  
+  
+  #save plot
+  if (pp == 'all') {name_fig = 'all'}
+  else {name_fig = 'learners'}
+  fname = sprintf('./docs/figures/Pres_AngError_per4Trials_%s_%s.%s', expeV, name_fig, extension)
+  ggsave(file=fname, plot=plt, width=WxL[1], height=WxL[2])
+  
+}
+
+
+
+plotAngErr_FirstLast_4Trial_V1V2_pres <- function (df, WxL = c(12,7), 
+                                              pp = 'all', extension = 'svg') {
+  
+  #custom colors
+  myCols <- c('#dd571c', '#dd571c', '#1338be', '#1338be')
+  myFills <- c('NA', '#dd571c', '#1338be', 'NA')
+  
+  # #get experiment version
+  # expeV <- unique(df$experiment)
+  # 
+  # #get the number of participants
+  # npp <- length(unique(df$ppid))
+  # 
+  # #set plot title
+  # if (pp == 'all') {ttl = sprintf('N = %s', npp)}
+  # else {ttl = sprintf('N = %s (learners only)', npp)}
+  
+  #make plot
+  plt <- ggplot(data = df, 
+                aes(x = tool_expe, y = mn_launch_angle_err_dir)) +
+    #margin of error (participants still get max points)
+    geom_rect(mapping = aes(xmin = -Inf, xmax = +Inf, ymin = -3, ymax = +3), 
+              fill = 'grey85', color = NA, alpha = 0.5) + 
+    geom_hline(yintercept = 0, linetype = 'solid', color = 'grey40') + 
+    geom_hline(yintercept = c(-15, 15), linetype = 'dotted', color = 'grey40') + 
+    geom_hline(yintercept = c(30), linetype = 'dashed', color = 'grey40') + 
+    facet_grid(. ~ expe_phase + trialN) + 
+    #boxplots for each tool used
+    geom_boxplot(aes(color = tool_expe, fill = tool_expe), 
+                 outlier.shape = NA, alpha = 0.6) + 
+    #individual data points
+    geom_point(aes(color = tool_expe, fill = tool_expe), shape = 21, stroke = 0.7,
+               size = 2, alpha = 0.8,
+               position = position_jitter(width = 0.1, seed = 1)) + #set seed to make jitter reproducible
+    #add mean to boxplots
+    stat_summary(fun = 'mean', geom = 'point', size = 3.5, shape = 23, 
+                 color = 'black', fill = 'white', show.legend = FALSE) + 
+    
+    theme_classic_article() +
+    theme(text = element_text(size = 15)) + 
+    #remove x axis elements
+    theme(axis.ticks.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.line.x = element_blank()) + 
+    scale_color_manual(name = 'Tool', values = myCols) + 
+    scale_fill_manual(name = 'Tool', values = myFills) + 
+    scale_y_continuous(limits = c(-20, 45), breaks = seq(-30, 30, 15), expand = c(0.02, 0)) +
+    labs(x = '', 
+         y = 'Angular error at launch (°)') 
+  
+  
+  #save plot
+  if (pp == 'all') {name_fig = 'all'}
+  else {name_fig = 'learners'}
+  fname = sprintf('./docs/figures/Pres_V1V2_AngError_per4Trials_%s.%s', name_fig, extension)
+  ggsave(file=fname, plot=plt, width=WxL[1], height=WxL[2])
+
 }
 
 

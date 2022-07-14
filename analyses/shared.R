@@ -211,6 +211,43 @@ addFirtLastBlocks_perTool <- function (df) {
 }
 
 
+addFirtLast4Trials_perTool <- function (df) {
+  
+  #get the first 4 and last 4 trial number per tool for each experimental phase
+  trials_to_keep <- df %>% 
+    filter(expe_phase != 'practice') %>% #remove practice trials
+    group_by(expe_phase) %>% 
+    filter(row_number() <= 4 | row_number() > n() - 4) %>% 
+    arrange(trialN_tool) %>% 
+    pull(trialN_tool)
+  
+  #extract the first 4 trials of each experimental phase
+  #(every 4 other element of trials_to_keep, starting from the 1st element)
+  firstTr <- trials_to_keep[c(TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE)]
+  #extract the last 4 trials of each experimental phase
+  #(every 4 other element of trials_to_keep, starting from the 2nd element)
+  lastTr <- trials_to_keep[c(FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE)]
+  
+  df2 <- df %>%
+    filter(trialN_tool %in% trials_to_keep) %>%
+    #create trialN
+    mutate(trialN = case_when(trialN_tool %in% firstTr ~ 'First 4 trials',
+                              trialN_tool %in% lastTr ~ 'Last 4 trials',
+                              TRUE ~ 'NA')) %>%
+    #calculate launch angle error direction across the whole block (i.e. 8 trials)
+    group_by(experiment, ppid, expe_phase, trialN, tool_used) %>%
+    summarise(mn_launch_angle_err_dir = mean(launch_angle_err_dir, na.rm = TRUE),
+              n = n(),
+              .groups = 'drop') %>%
+    #rearrange otherwise geom_line and geom_point for individual
+    #data points don't have the same jitter and aren't aligned
+    arrange(expe_phase, trialN, ppid, tool_used)
+  
+  return(df2)
+  
+}
+
+
 
 #get non-learners ----
 

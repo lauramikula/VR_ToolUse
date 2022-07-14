@@ -35,10 +35,11 @@ survey2 <- survey %>%
 
 #get the number of participants in each first_pert_cond
 N_gps <- data %>% 
+  group_by(experiment) %>% 
   group_by(ppid) %>% 
   filter(row_number() == 1) %>% 
   ungroup(ppid) %>% 
-  count(first_pert_cond)
+  count(experiment, first_pert_cond)
 N_gps
 
 
@@ -96,6 +97,21 @@ data_FirstLastTr <- addFirtLastTrials_perTool(data)
 
 #first and last block (average across 8 trials)
 data_FirstLastBl <- addFirtLastBlocks_perTool(data)
+
+#average across first 4 and last 4 trials
+data_FirstLast4Tr <- addFirtLast4Trials_perTool(data)
+#remove baseline first trials
+to_rmv <- data_FirstLast4Tr %>% 
+  filter(expe_phase == 'baseline' & trialN == 'First 4 trials') #get trials to remove first (in to_rmv)
+data_FirstLast4Tr <- anti_join(data_FirstLast4Tr, to_rmv) #anti-join to remove trials in to_rmv
+rm(to_rmv)
+#add a column for interaction between tool and experiment version (to get ordered plots)
+data_FirstLast4Tr <- data_FirstLast4Tr %>% 
+  mutate(tool_expe = factor(interaction(tool_used, experiment),
+                            levels = c('paddle.V2', 'paddle.V1', 'slingshot.V1', 'slingshot.V2'))) 
+data_FirstLast4Tr <- data_FirstLast4Tr %>% 
+  arrange(tool_expe)
+  
 
 
 ##launch angle error on first and last trials of each experimental phase ----
@@ -200,4 +216,10 @@ plotAngErr_FirstLast_Trial_pres(data_FirstLastTr_learn, pp = 'learners', extensi
 plotAngErr_FirstLast_Block_pres(data_FirstLastBl, extension = 'svg')
 #learners
 plotAngErr_FirstLast_Block_pres(data_FirstLastBl_learn, pp = 'learners', extension = 'png')
+
+#every 4 trials errors
+#all
+plotAngErr_FirstLast_4Trial_pres(data_FirstLast4Tr, extension = 'png')
+#V1 and V2 on the same plot
+plotAngErr_FirstLast_4Trial_V1V2_pres(data_FirstLast4Tr, extension = 'png')
 
