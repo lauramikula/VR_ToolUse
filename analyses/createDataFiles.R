@@ -108,10 +108,10 @@ addExpePhase <- function (df) {
   
   #define names of the experiment phase
   lbl_expePhase <- list(
-    c('practice', 'baseline', 'exposure', 'washout'),
-    c('practice', 'baseline', 'exposure', 'washout', 'reexposure'),
-    c('practice', 'baseline', 'exposure', 'washout', 'reexposure'),
-    c('practice', 'baseline', 'exposure', 'washout', 'reexposure')
+    c('practice', 'baseline', 'exposure', 'washout'), # pilot1
+    c('practice', 'baseline', 'exposure', 'washout', 'reexposure'), # pilot2
+    c('practice', 'baseline', 'exposure', 'washout', 'reexposure'), # v1
+    c('practice', 'baseline', 'exposure', 'washout', 'reexposure') # v2
   )
   
   df <- df %>% 

@@ -881,15 +881,15 @@ plotAngErr_FirstLast_4Trial_V1V2_pres <- function (df, WxL = c(12,7),
                  color = 'black', fill = 'white', show.legend = FALSE) + 
     
     theme_classic_article() +
-    theme(text = element_text(size = 15)) + 
+    theme(text = element_text(size = 18)) + 
     #remove x axis elements
     theme(axis.ticks.x = element_blank(),
           axis.text.x = element_blank(),
           axis.line.x = element_blank()) + 
     scale_color_manual(name = 'Tool', values = myCols, 
-                       labels = c('paddle (no switch)', 'paddle', 'slingshot', 'slingshot (no switch)')) + 
+                       labels = c('paddle (single)', 'paddle (dual)', 'slingshot (dual)', 'slingshot (single)')) + 
     scale_fill_manual(name = 'Tool', values = myFills, 
-                      labels = c('paddle (no switch)', 'paddle', 'slingshot', 'slingshot (no switch)')) + 
+                      labels = c('paddle (single)', 'paddle (dual)', 'slingshot (dual)', 'slingshot (single)')) + 
     scale_y_continuous(limits = c(-20, 45), breaks = seq(-30, 30, 15), expand = c(0.02, 0)) +
     labs(x = '', 
          y = 'Angular error at launch (°)') 

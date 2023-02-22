@@ -21,7 +21,7 @@ data <- getDataFile(version_expe = expeV)
 #load survey file
 survey <- getSurvey(version_expe = expeV)
 
-#filter only V1 participants
+#filter only V1 participants for survey file
 no_pp <- c('wn10', 'In10')
 survey2 <- survey %>% 
   filter(as.Date(RecordedDate) < as.Date(c('2022-06-15')),
@@ -228,5 +228,5 @@ plotAngErr_FirstLast_Block_pres(data_FirstLastBl_learn, pp = 'learners', extensi
 #all
 plotAngErr_FirstLast_4Trial_pres(data_FirstLast4Tr, extension = 'png')
 #V1 and V2 on the same plot
-plotAngErr_FirstLast_4Trial_V1V2_pres(data_FirstLast4Tr, extension = 'png')
+plotAngErr_FirstLast_4Trial_V1V2_pres(data_FirstLast4Tr, extension = 'svg')
 
